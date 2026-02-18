@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenExtend &amp; GenMorph – Generative Audio Extension and Morphing</title>
+    <meta name="description" content="GenExtend and GenMorph: Generative Audio Extension and Morphing. ICASSP 2026.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── Reset & Base ──────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --clr-bg:        #0c0c14;
+            --clr-surface:   #14141f;
+            --clr-card:      #1a1a2e;
+            --clr-border:    #2a2a40;
+            --clr-text:      #e2e2ef;
+            --clr-text-dim:  #9999b3;
+            --clr-accent:    #6c63ff;
+            --clr-accent2:   #ff6584;
+            --clr-accent3:   #43e8d8;
+            --radius:        12px;
+            --shadow:        0 4px 24px rgba(0,0,0,.35);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--clr-bg);
+            color: var(--clr-text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Animated gradient background ──────────────────────────────── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(108,99,255,.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 90%, rgba(255,101,132,.08) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 50% 50%, rgba(67,232,216,.06) 0%, transparent 60%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* ── Layout ────────────────────────────────────────────────────── */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        section {
+            padding: 60px 0;
+        }
+
+        /* ── Hero ──────────────────────────────────────────────────────── */
+        .hero {
+            text-align: center;
+            padding: 100px 0 60px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 100px;
+            font-size: .8rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--clr-accent), var(--clr-accent2));
+            color: #fff;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff 30%, var(--clr-accent3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            color: var(--clr-text-dim);
+            margin-bottom: 32px;
+            font-weight: 300;
+        }
+
+        /* ── Authors ───────────────────────────────────────────────────── */
+        .authors {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .author {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .author .equal {
+            font-size: .75rem;
+            vertical-align: super;
+            color: var(--clr-accent);
+        }
+
+        .affiliation {
+            color: var(--clr-text-dim);
+            font-size: .95rem;
+            margin-bottom: 6px;
+        }
+
+        .affiliation-logo {
+            height: 22px;
+            vertical-align: middle;
+            margin-right: 4px;
+            filter: brightness(0) invert(1) opacity(.7);
+        }
+
+        .equal-note {
+            color: var(--clr-text-dim);
+            font-size: .85rem;
+            margin-top: 4px;
+        }
+
+        /* ── Links row ─────────────────────────────────────────────────── */
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 28px;
+        }
+
+        .links a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            border-radius: 100px;
+            font-size: .9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .links a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108,99,255,.3);
+        }
+
+        .btn-primary {
+            background: var(--clr-accent);
+            color: #fff;
+        }
+
+        .btn-outline {
+            border: 1.5px solid var(--clr-border);
+            color: var(--clr-text);
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--clr-accent);
+        }
+
+        /* ── Section titles ────────────────────────────────────────────── */
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            position: relative;
+            display: inline-block;
+        }
+
+        h2::after {
+            content: '';
+            display: block;
+            width: 48px;
+            height: 3px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--clr-accent), var(--clr-accent2));
+            margin-top: 8px;
+        }
+
+        .section-desc {
+            color: var(--clr-text-dim);
+            max-width: 680px;
+            margin-bottom: 40px;
+            font-size: .97rem;
+        }
+
+        /* ── Abstract ──────────────────────────────────────────────────── */
+        .abstract-box {
+            background: var(--clr-card);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius);
+            padding: 36px 40px;
+            box-shadow: var(--shadow);
+            line-height: 1.85;
+            font-size: .97rem;
+            color: var(--clr-text);
+        }
+
+        .abstract-box p {
+            margin-bottom: 0;
+        }
+
+        /* ── Example row (3-col) ───────────────────────────────────────── */
+        .example-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .example-row.two-col {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .example-card {
+            background: var(--clr-card);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: border-color .25s, transform .25s;
+        }
+
+        .example-card:hover {
+            border-color: var(--clr-accent);
+            transform: translateY(-3px);
+        }
+
+        .example-card video {
+            width: 100%;
+            display: block;
+            background: #000;
+        }
+
+        .card-label {
+            padding: 14px 16px;
+            font-size: .85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--clr-text-dim);
+            text-align: center;
+        }
+
+        .card-label .highlight {
+            color: var(--clr-accent3);
+        }
+
+        .card-label .highlight-fwd {
+            color: var(--clr-accent);
+        }
+
+        .card-label .highlight-bwd {
+            color: var(--clr-accent2);
+        }
+
+        .card-label .highlight-blend {
+            background: linear-gradient(90deg, var(--clr-accent), var(--clr-accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ── Divider ───────────────────────────────────────────────────── */
+        .divider {
+            border: none;
+            border-top: 1px solid var(--clr-border);
+            margin: 0;
+        }
+
+        /* ── Note banner ───────────────────────────────────────────────── */
+        .note {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(108,99,255,.08);
+            border-left: 3px solid var(--clr-accent);
+            border-radius: 0 var(--radius) var(--radius) 0;
+            padding: 16px 20px;
+            margin-bottom: 48px;
+            font-size: .9rem;
+            color: var(--clr-text-dim);
+            line-height: 1.6;
+        }
+
+        .note svg {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ── Example set header ────────────────────────────────────────── */
+        .example-set-label {
+            font-size: .8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--clr-text-dim);
+            margin-bottom: 16px;
+            opacity: .6;
+        }
+
+        /* ── Footer ────────────────────────────────────────────────────── */
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--clr-text-dim);
+            font-size: .85rem;
+            border-top: 1px solid var(--clr-border);
+        }
+
+        footer a {
+            color: var(--clr-accent);
+            text-decoration: none;
+        }
+
+        /* ── Responsive ────────────────────────────────────────────────── */
+        @media (max-width: 720px) {
+            .example-row {
+                grid-template-columns: 1fr;
+            }
+            .example-row.two-col {
+                grid-template-columns: 1fr;
+            }
+            .authors { gap: 16px; }
+            .abstract-box { padding: 24px; }
+            section { padding: 40px 0; }
+            .hero { padding: 60px 0 40px; }
+        }
+
+        /* ── Fade-in animation ─────────────────────────────────────────── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity .6s ease, transform .6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Icon helper ───────────────────────────────────────────────── */
+        .icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════  HERO  ═══════════════════════════════ -->
+<header class="hero container">
+    <div class="badge">ICASSP 2026</div>
+    <h1>GenExtend &amp; GenMorph</h1>
+    <p class="subtitle">Generative Audio Extension and Morphing</p>
+
+    <div class="authors">
+        <span class="author">Prem Seetharaman<span class="equal">*</span></span>
+        <span class="author">Oriol Nieto<span class="equal">*</span></span>
+        <span class="author">Justin Salamon</span>
+    </div>
+    <p class="affiliation">Adobe Research</p>
+    <p class="equal-note"><span style="color:var(--clr-accent)">*</span> Equal contribution</p>
+
+    <div class="links">
+        <a href="#" class="btn-primary" aria-label="Read the paper">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 2v6h6M16 13H8m8 4H8m2-8H8"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 2v6h6M16 13H8m8 4H8m2-8H8"/></svg>
+            Paper
+        </a>
+        <a href="#genextend" class="btn-outline">
+            <svg class="icon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z"/></svg>
+            GenExtend Examples
+        </a>
+        <a href="#genmorph" class="btn-outline">
+            <svg class="icon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z"/></svg>
+            GenMorph Examples
+        </a>
+    </div>
+</header>
+
+<!-- ════════════════════════  ABSTRACT  ═══════════════════════════════ -->
+<section class="container fade-in" style="text-align:center;">
+    <img src="img/GenExtendHero.png" alt="GenExtend & GenMorph architecture diagram" style="max-width:100%; border-radius:var(--radius); margin-bottom:48px;">
+</section>
+
+<section class="container fade-in">
+    <h2>Abstract</h2>
+    <div class="abstract-box">
+        <p>
+            In audio-related creative tasks, sound designers often seek to extend and blend different sounds from their libraries.
+            Generative audio models, capable of creating audio using examples as references, offer promising solutions.
+            By masking the noisy latents of a DiT and applying a novel variant of classifier-free guidance on such masked latents,
+            we demonstrate that: <strong>(i)</strong>&nbsp;given an audio reference, we can extend it both forward and backward for a specified duration,
+            and <strong>(ii)</strong>&nbsp;given two audio references, we can blend them seamlessly for the desired duration.
+            Furthermore, we show that by fine-tuning the model on different types of stationary audio data we mitigate potential hallucinations.
+            Our method's effectiveness is validated through objective metrics, showing that the resulting audios achieve
+            Fréchet Audio Distances (FADs) comparable to original, non-generated ones. Additionally, we validate our results through a subjective
+            listener test, where subjects gave positive ratings to the proposed model generations. This technique paves the way for more controllable
+            and expressive generative sound frameworks, enabling sound designers to focus less on tedious, repetitive tasks and more on their actual
+            creative process.
+        </p>
+    </div>
+</section>
+
+<hr class="divider container" style="margin-top: 24px;">
+
+<!-- ═══════════════════  GENERATIVE EXTEND  ═══════════════════════════ -->
+<section id="genextend" class="container fade-in">
+    <h2>Generative Extend</h2>
+    <p class="section-desc">
+        Given an audio prompt, GenExtend seamlessly continues the audio <em>forward</em> or <em>backward</em> for a specified duration.
+    </p>
+
+    <div class="note">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>The videos are <strong>not</strong> part of the generation/prompt. They are included solely to help illustrate where the audio prompt starts and ends.</span>
+    </div>
+
+    <!-- Example 1 -->
+    <p class="example-set-label">Example 1</p>
+    <div class="example-row">
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/01-genextend-prompt.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/01-genextend-forward.mp4" type="video/mp4"></video>
+            <div class="card-label">GenExtend <span class="highlight-fwd">Forward →</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/01-genextend-backwards.mp4" type="video/mp4"></video>
+            <div class="card-label">GenExtend <span class="highlight-bwd">← Backward</span></div>
+        </div>
+    </div>
+
+    <!-- Example 2 -->
+    <p class="example-set-label">Example 2</p>
+    <div class="example-row">
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/02-genextend-prompt.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/02-genextend-forward.mp4" type="video/mp4"></video>
+            <div class="card-label">GenExtend <span class="highlight-fwd">Forward →</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/02-genextend-backwards.mp4" type="video/mp4"></video>
+            <div class="card-label">GenExtend <span class="highlight-bwd">← Backward</span></div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider container">
+
+<!-- ═══════════════════  GENERATIVE MORPHING  ═════════════════════════ -->
+<section id="genmorph" class="container fade-in">
+    <h2>Generative Morphing</h2>
+    <p class="section-desc">
+        Given two audio prompts, GenMorph creates a seamless blend between them for the desired duration.
+    </p>
+
+    <!-- Example 1 -->
+    <p class="example-set-label">Example 1</p>
+    <div class="example-row">
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/01-genblend-prompt1.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt 1</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/01-genblend-prompt2.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt 2</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/01-genblend-blend.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight-blend">Generative Morphing</span></div>
+        </div>
+    </div>
+
+    <!-- Example 2 -->
+    <p class="example-set-label">Example 2</p>
+    <div class="example-row">
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/02-genblend-prompt1.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt 1</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/02-genblend-prompt2.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt 2</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/02-genblend-blend.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight-blend">Generative Morphing</span></div>
+        </div>
+    </div>
+
+    <!-- Example 3 -->
+    <p class="example-set-label">Example 3</p>
+    <div class="example-row">
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/03-genblend-prompt1.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt 1</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/03-genblend-prompt2.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt 2</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/03-genblend-blend.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight-blend">Generative Morphing</span></div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider container">
+
+<!-- ═══════════════════  BASELINES  ═══════════════════════════════════ -->
+<section class="container fade-in">
+    <h2>Baselines</h2>
+    <p class="section-desc">
+        Convolutional Noise Matching (CNM) — a non-generative baseline for audio extension.
+    </p>
+
+    <!-- Baseline 1 -->
+    <p class="example-set-label">Example 1</p>
+    <div class="example-row">
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/01-genextend-prompt.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/01_baseline_forward.mp4" type="video/mp4"></video>
+            <div class="card-label">CNM <span class="highlight-fwd">Forward →</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/01_baseline_backwards.mp4" type="video/mp4"></video>
+            <div class="card-label">CNM <span class="highlight-bwd">← Backward</span></div>
+        </div>
+    </div>
+
+    <!-- Baseline 2 -->
+    <p class="example-set-label">Example 2</p>
+    <div class="example-row">
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/02-genextend-prompt.mp4" type="video/mp4"></video>
+            <div class="card-label"><span class="highlight">Audio Prompt</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/02_baseline_forward.mp4" type="video/mp4"></video>
+            <div class="card-label">CNM <span class="highlight-fwd">Forward →</span></div>
+        </div>
+        <div class="example-card">
+            <video controls preload="metadata"><source src="videos/02_baseline_backwards.mp4" type="video/mp4"></video>
+            <div class="card-label">CNM <span class="highlight-bwd">← Backward</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════  FOOTER  ═════════════════════════════════ -->
+<footer>
+    <div class="container">
+        <p>&copy; 2026 Adobe Research &middot; GenExtend &amp; GenMorph</p>
+    </div>
+</footer>
+
+<!-- ════════════════  FADE-IN OBSERVER  ═══════════════════════════════ -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12 });
+
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    });
+</script>
+
+</body>
+</html>
